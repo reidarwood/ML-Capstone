@@ -7,12 +7,19 @@ from datetime import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot(csv_file, model_name):
+import argparse
+
+def plot(csv_file):
+    '''
+    Create plot for losses and accuracies.
+    :param csv_file: path to csv file with following columns: ['train_loss', 'train_acc', 'test_loss', 'test_acc']
+    '''
+
     fig, ax = plt.subplots(2)
     df = pd.read_csv(csv_file)
     df[['train_acc','test_acc']] *= 100
     
-    ax[0].set_title('Model Performance: {}'.format(model_name))
+    ax[0].set_title('Model Performance: {}'.format(csv_file))
     ax[0].set_ylabel('Cross Entropy Loss')
     ax[1].set_ylabel('Accuracy (%)')
     ax[1].set_xlabel('EPOCH')
@@ -25,10 +32,7 @@ def plot(csv_file, model_name):
 
 
 
-def main():
-    # plot('transformer_6_0.5_128.csv', 'Transformer')
-    # return
-
+def main(is_transformer):
     device = torch.device('cuda:0' if torch.cuda.is_available else "cpu")
 
     
@@ -43,22 +47,39 @@ def main():
 
     train_loader, test_loader = get_loaders(batch_size)
 
-    model = VIT(dropout=0.1)
+    model = None
+    if is_transformer:
+        model = VIT(class_num=class_num)
+    else:
+        model = CNN(class_num=class_num)
     model.to(device)
 
     
     optimizer = torch.optim.Adam(model.parameters(), learning_rate)
     model_name='transformer'
 
-    print(datetime.now())
+    # Train the model
     df = train_model(model, train_loader, test_loader, loss_func, optimizer, num_epoch, correct_num_func=correct_num_func, print_info=True, device=device, model_name=model_name)
-    print(datetime.now())
 
     
     print('Saving Losses and Accuracies')
-    print(df)
     df.to_csv('{}.csv'.format(model_name), index=False)
 
     
 if __name__=='__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--make', help='builds files needed for easier data processing', action='store_true')
+    parser.add_argument('-p', '--plot', help='Plot csv file of losses and accuracies')
+    parser.add_argument('--cnn', help='Type of model to use, default is Transformer. With flag is CNN', action='store_true')
+    args = parser.parse_args()
+
+    is_transformer = True
+    if args.cnn:
+        is_transformer = False
+    
+    if args.make:
+        print('making')
+    elif args.plot:
+        plot(args.plot)
+    else:
+        main(is_transformer)
