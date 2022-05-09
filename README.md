@@ -1,4 +1,6 @@
 # ML-Capstone
+For my capstone, I did Fine Grained Visual Classification. To read about my experience read `Capstone.pdf`. This document pertains solely to running the code.
+
 ## Environment
 To start install an environment with 
 ```
